@@ -150,10 +150,14 @@ src/
 
 ## Tech stack
 
-Next.js (App Router) · React · TypeScript · Tailwind CSS v4 · shadcn/ui (Radix).
-A "phosphor revival" dark theme (CRT-green on warm charcoal, IBM Plex
-Mono/Sans). Drag & drop uses the native HTML5 API; no external state library.
+- Next.js (App Router)
+- React
+- TypeScript
+- Tailwind CSS v4
+- shadcn/ui (Radix).
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+Opens source under the MIT License.
+
+Built with ❤️ by [aeksco](https://x.com/aeksco)
