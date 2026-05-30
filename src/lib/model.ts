@@ -45,6 +45,67 @@ export function emptyDoc(): ResurrectDoc {
   };
 }
 
+// A small, realistic two-session document for trying the editor / preview.
+export function exampleDoc(): ResurrectDoc {
+  const pane = (
+    index: number,
+    path: string,
+    command: string,
+    fullCommand = '',
+    active = 0
+  ): Pane => ({ index, title: '', path, active, command, fullCommand });
+
+  const win = (
+    index: number,
+    name: string,
+    active: number,
+    layout: string,
+    panes: Pane[]
+  ): TmuxWindow => ({
+    index,
+    name,
+    active,
+    flags: active ? '*' : '-',
+    layout,
+    automaticRename: 'off',
+    panes,
+  });
+
+  return {
+    sessions: [
+      {
+        name: 'web',
+        windows: [
+          win(1, 'editor', 1, '9a1c,120x30,0,0,1', [
+            pane(1, '~/code/web-app', 'nvim', 'nvim .', 1),
+          ]),
+          win(2, 'server', 0, '7b3d,120x30,0,0[120x15,0,0,2,120x14,0,16,3]', [
+            pane(1, '~/code/web-app', 'node', 'pnpm run dev', 1),
+            pane(2, '~/code/web-app', 'zsh', '', 0),
+          ]),
+          win(3, 'shell', 0, '5c5e,120x30,0,0,4', [
+            pane(1, '~/code/web-app', 'zsh', '', 1),
+          ]),
+        ],
+      },
+      {
+        name: 'infra',
+        windows: [
+          win(1, 'docker', 1, '3d7f,120x30,0,0{60x30,0,0,5,59x30,61,0,6}', [
+            pane(1, '~/code/infra', 'docker', 'docker compose up', 0),
+            pane(2, '~/code/infra', 'zsh', '', 1),
+          ]),
+          win(2, 'logs', 0, '1e9a,120x30,0,0,7', [
+            pane(1, '~/code/infra', 'tail', 'tail -f app.log', 1),
+          ]),
+        ],
+      },
+    ],
+    activeSession: 'web',
+    hasTrailingNewline: true,
+  };
+}
+
 // Generate a session name not already taken.
 export function uniqueSessionName(sessions: Session[], base: string): string {
   const taken = new Set(sessions.map((s) => s.name));

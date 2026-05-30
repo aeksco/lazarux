@@ -13,7 +13,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { parseResurrect, serializeResurrect } from '@/lib/resurrect';
-import { emptyDoc, prefixCollisions } from '@/lib/model';
+import { emptyDoc, exampleDoc, prefixCollisions } from '@/lib/model';
 import type { ResurrectDoc } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -117,6 +117,15 @@ export default function Home() {
     setError(null);
     setFilename(null);
     setData(emptyDoc());
+    setStartCollapsed(false);
+    setLoadId((n) => n + 1);
+    setView('editor');
+  }
+
+  function handleExample() {
+    setError(null);
+    setFilename(null);
+    setData(exampleDoc());
     setStartCollapsed(false);
     setLoadId((n) => n + 1);
     setView('editor');
@@ -332,7 +341,14 @@ export default function Home() {
           <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
             sessions.txt
           </code>{' '}
-          file, or{' '}
+          file,{' '}
+          <button
+            onClick={handleExample}
+            className="cursor-pointer font-semibold text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
+          >
+            open an example
+          </button>
+          , or{' '}
           <button
             onClick={handleNew}
             className="cursor-pointer font-semibold text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
