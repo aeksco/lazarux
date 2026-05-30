@@ -1,0 +1,151 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Lazarux — "phosphor revival" theme.
+ * Deep warm charcoal, CRT phosphor-green primary, bone-white text, ember-red
+ * destructive. App is dark-only, so the same palette applies to :root and .dark.
+ */
+:root,
+.dark {
+  --radius: 0.5rem;
+
+  --background: oklch(0.16 0.008 160);
+  --foreground: oklch(0.92 0.012 150);
+  --card: oklch(0.195 0.01 162);
+  --card-foreground: oklch(0.92 0.012 150);
+  --popover: oklch(0.185 0.01 162);
+  --popover-foreground: oklch(0.92 0.012 150);
+  --primary: oklch(0.84 0.18 150);
+  --primary-foreground: oklch(0.18 0.04 155);
+  --secondary: oklch(0.255 0.014 162);
+  --secondary-foreground: oklch(0.92 0.012 150);
+  --muted: oklch(0.23 0.012 162);
+  --muted-foreground: oklch(0.66 0.022 152);
+  --accent: oklch(0.285 0.022 156);
+  --accent-foreground: oklch(0.95 0.02 150);
+  --destructive: oklch(0.66 0.19 27);
+  --destructive-foreground: oklch(0.96 0.02 60);
+  --border: oklch(0.3 0.012 162);
+  --input: oklch(0.33 0.013 162);
+  --ring: oklch(0.72 0.13 150);
+
+  /* terminal-specific accents */
+  --term-bg: oklch(0.12 0.006 160);
+  --term-green: oklch(0.87 0.19 150);
+  --term-blue: oklch(0.78 0.11 240);
+  --term-amber: oklch(0.83 0.15 78);
+  --term-dim: oklch(0.72 0.02 152);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-term-bg: var(--term-bg);
+  --color-term-green: var(--term-green);
+  --color-term-blue: var(--term-blue);
+  --color-term-amber: var(--term-amber);
+  --color-term-dim: var(--term-dim);
+
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    /* faint phosphor glow bleeding down from the top + warm vignette */
+    background-image:
+      radial-gradient(
+        1100px 520px at 50% -8%,
+        oklch(0.32 0.07 152 / 0.22),
+        transparent 70%
+      ),
+      radial-gradient(
+        900px 700px at 100% 110%,
+        oklch(0.2 0.03 150 / 0.18),
+        transparent 70%
+      );
+    background-attachment: fixed;
+  }
+
+  /* let the green selection feel like a terminal highlight */
+  ::selection {
+    background: oklch(0.84 0.18 150 / 0.28);
+  }
+}
+
+@layer components {
+  /* soft phosphor glow for the wordmark + active accents */
+  .phosphor {
+    text-shadow:
+      0 0 12px oklch(0.87 0.19 150 / 0.45),
+      0 0 2px oklch(0.87 0.19 150 / 0.35);
+  }
+
+  /* CRT scanline overlay used on the terminal preview */
+  .scanlines {
+    position: relative;
+  }
+  .scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      oklch(0 0 0 / 0) 0px,
+      oklch(0 0 0 / 0) 2px,
+      oklch(0 0 0 / 0.16) 3px,
+      oklch(0 0 0 / 0) 4px
+    );
+    mix-blend-mode: multiply;
+    opacity: 0.5;
+  }
+}
+
+@layer base {
+  /* staggered page-load reveal */
+  @keyframes lazarux-rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-rise {
+    animation: lazarux-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
