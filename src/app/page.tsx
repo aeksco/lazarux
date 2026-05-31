@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
+import { SoftwareApplicationJsonLd } from 'next-seo';
 import {
   Code,
   Download,
@@ -12,6 +13,12 @@ import {
   TriangleAlert,
   Upload,
 } from 'lucide-react';
+import {
+  defaultTitle,
+  description as seoDescription,
+  ogImage,
+  siteUrl,
+} from '@/lib/seo';
 import { parseResurrect, serializeResurrect } from '@/lib/resurrect';
 import { emptyDoc, exampleDoc, prefixCollisions } from '@/lib/model';
 import type { ResurrectDoc } from '@/lib/types';
@@ -178,6 +185,23 @@ export default function Home() {
 
   return (
     <div className="mx-auto max-w-[1120px] px-6 pt-12 pb-28">
+      {/* next-seo structured data — surfaces Lazarux as a rich result and
+          complements the meta tags defined via the Metadata API in layout.tsx. */}
+      <SoftwareApplicationJsonLd
+        type="DeveloperApplication"
+        name={defaultTitle}
+        description={seoDescription}
+        url={siteUrl}
+        image={ogImage.url}
+        applicationCategory="DeveloperApplication"
+        operatingSystem="Any (web browser)"
+        offers={{
+          '@type': 'Offer',
+          price: 0,
+          priceCurrency: 'USD',
+        }}
+        author={{ '@type': 'Person', name: 'aeksco', url: 'https://x.com/aeksco' }}
+      />
       <header className="mb-8 animate-rise">
         <div className="flex items-center gap-3">
           <Skull className="size-8 text-primary phosphor" strokeWidth={1.75} />
