@@ -294,6 +294,8 @@ export default function Editor({
   }
 
   function moveWindow(fromS: number, fromW: number, toS: number, toW: number) {
+    // Key of a window that lands in a new session, so it can start collapsed.
+    let movedKey: string | null = null;
     update((d) => {
       if (fromS === toS) {
         const windows = d.sessions[fromS].windows;
@@ -314,8 +316,14 @@ export default function Editor({
         normalizeActive(dst);
         renumberWindows(src);
         renumberWindows(dst);
+        movedKey = windowKey(toS, moved);
       }
     });
+    // A window dragged into another session starts collapsed in its new parent,
+    // matching the default for every window in the list.
+    if (movedKey) {
+      setCollapsedWindows((prev) => new Set(prev).add(movedKey!));
+    }
   }
 
   function openMove(s: number, w: number) {
