@@ -10,7 +10,9 @@
  */
 
 import { useState } from 'react';
+import { X } from 'lucide-react';
 import type { Pane, ResurrectDoc, TmuxWindow } from '@/lib/types';
+import { normalizeActive, renumberWindows } from '@/lib/model';
 import { cn } from '@/lib/utils';
 import {
   Select,
@@ -84,16 +86,35 @@ function shortPath(path: string): string {
   return path.replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~');
 }
 
-function PaneBox({ pane, active }: { pane?: Pane; active: boolean }) {
+function PaneBox({
+  pane,
+  active,
+  onRemove,
+}: {
+  pane?: Pane;
+  active: boolean;
+  onRemove?: () => void;
+}) {
   return (
     <div
       className={cn(
-        'h-full w-full overflow-hidden rounded border p-2 font-mono text-xs leading-relaxed',
+        'group relative h-full w-full overflow-hidden rounded border p-2 font-mono text-xs leading-relaxed',
         active
           ? 'border-primary/70 bg-primary/5 ring-1 ring-primary/50'
           : 'border-border/60 bg-black/25'
       )}
     >
+      {pane && onRemove ? (
+        <button
+          type="button"
+          onClick={onRemove}
+          title="Remove pane"
+          aria-label="Remove pane"
+          className="absolute top-1 right-1 z-10 rounded p-0.5 text-muted-foreground opacity-0 transition-colors transition-opacity group-hover:opacity-100 hover:bg-destructive/20 hover:text-destructive focus-visible:opacity-100"
+        >
+          <X className="size-3.5" />
+        </button>
+      ) : null}
       {pane ? (
         <>
           <div className="truncate text-term-blue">
@@ -109,15 +130,30 @@ function PaneBox({ pane, active }: { pane?: Pane; active: boolean }) {
   );
 }
 
-function WindowView({ win }: { win: TmuxWindow }) {
+function WindowView({
+  win,
+  onRemovePane,
+}: {
+  win: TmuxWindow;
+  onRemovePane?: (paneIdx: number) => void;
+}) {
   const root = win.layout ? parseLayout(win.layout) : null;
+  // The "x" only appears once a window holds more than one pane — every window
+  // must keep at least one.
+  const canRemove = win.panes.length > 1;
 
   if (!root) {
     return (
       <div className="absolute inset-0 flex flex-col gap-[2px] p-[2px]">
         {win.panes.map((p, i) => (
           <div key={i} className="flex-1">
-            <PaneBox pane={p} active={p.active === 1} />
+            <PaneBox
+              pane={p}
+              active={p.active === 1}
+              onRemove={
+                canRemove && onRemovePane ? () => onRemovePane(i) : undefined
+              }
+            />
           </div>
         ))}
       </div>
@@ -143,7 +179,13 @@ function WindowView({ win }: { win: TmuxWindow }) {
               height: `${(leaf.h / H) * 100}%`,
             }}
           >
-            <PaneBox pane={pane} active={pane?.active === 1} />
+            <PaneBox
+              pane={pane}
+              active={pane?.active === 1}
+              onRemove={
+                canRemove && onRemovePane ? () => onRemovePane(i) : undefined
+              }
+            />
           </div>
         );
       })}
@@ -151,7 +193,13 @@ function WindowView({ win }: { win: TmuxWindow }) {
   );
 }
 
-export default function Preview({ data }: { data: ResurrectDoc }) {
+export default function Preview({
+  data,
+  onChange,
+}: {
+  data: ResurrectDoc;
+  onChange?: (data: ResurrectDoc) => void;
+}) {
   const initialSession = Math.max(
     0,
     data.sessions.findIndex((s) => s.name === data.activeSession)
@@ -176,6 +224,41 @@ export default function Preview({ data }: { data: ResurrectDoc }) {
     setSessionIdx(value);
     const active = data.sessions[value].windows.findIndex((w) => w.active === 1);
     setWindowIdx(active === -1 ? 0 : active);
+  }
+
+  function removePane(paneIdx: number) {
+    if (!onChange) return;
+    const next = structuredClone(data);
+    const window = next.sessions[si].windows[wi];
+    if (window.panes.length <= 1) return;
+    const removedActive = window.panes[paneIdx]?.active === 1;
+    window.panes.splice(paneIdx, 1);
+    // Removing the active pane leaves the window with none — promote a survivor
+    // (the one that slid into its slot, or the new last pane) so exactly one
+    // pane stays active.
+    if (removedActive && !window.panes.some((p) => p.active === 1)) {
+      const promote = Math.min(paneIdx, window.panes.length - 1);
+      window.panes.forEach((p, i) => {
+        p.active = i === promote ? 1 : 0;
+      });
+    }
+    // The saved layout still describes the old multi-pane geometry, so a lone
+    // survivor would render in its old sub-rectangle. Drop the layout so the
+    // single pane fills the whole window (and tmux restores it full-size too).
+    if (window.panes.length === 1) window.layout = '';
+    onChange(next);
+  }
+
+  function removeWindow() {
+    if (!onChange) return;
+    const next = structuredClone(data);
+    const windows = next.sessions[si].windows;
+    if (windows.length <= 1) return; // a session must keep at least one window
+    windows.splice(wi, 1);
+    normalizeActive(windows);
+    renumberWindows(windows);
+    onChange(next);
+    setWindowIdx((i) => Math.max(0, Math.min(i, windows.length - 1)));
   }
 
   return (
@@ -210,10 +293,25 @@ export default function Preview({ data }: { data: ResurrectDoc }) {
           <span className="ml-2 truncate font-mono text-xs text-muted-foreground">
             {session.name} — {win.name || '(unnamed)'}
           </span>
+          {onChange && session.windows.length > 1 && (
+            <button
+              type="button"
+              onClick={removeWindow}
+              title={`Remove window ${win.index}: ${win.name || '(unnamed)'}`}
+              aria-label="Remove window"
+              className="ml-auto rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/20 hover:text-destructive"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="scanlines relative h-[460px] bg-term-bg">
-          <WindowView key={`${si}:${wi}`} win={win} />
+          <WindowView
+            key={`${si}:${wi}`}
+            win={win}
+            onRemovePane={onChange ? removePane : undefined}
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-1 border-t border-black/40 bg-primary/85 px-2 py-1.5 font-mono text-xs">
